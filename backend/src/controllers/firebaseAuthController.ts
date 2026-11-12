@@ -4,7 +4,7 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import type { FirebaseRequest } from '../middleware/firebaseAuthMiddleware.js';
 
-const ALLOWED_EMAIL_DOMAIN = '@hbplus.fit';
+const ALLOWED_EMAIL_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN ?? '@hbplus.fit';
 
 export const loginWithFirebase = async (
   req: FirebaseRequest,

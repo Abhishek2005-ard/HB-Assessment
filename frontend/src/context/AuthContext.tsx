@@ -92,8 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const extractError = (err: unknown): string => {
-    if (err instanceof AxiosError && err.response?.data?.message) {
-      return err.response.data.message;
+    if (err instanceof AxiosError) {
+      if (err.response?.data?.message) {
+        return err.response.data.message;
+      }
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+        return 'Backend server is unreachable. Please verify the backend is running on http://localhost:5000.';
+      }
     }
     if (err instanceof Error) return err.message;
     return 'An unexpected error occurred';

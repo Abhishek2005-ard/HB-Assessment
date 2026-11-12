@@ -7,10 +7,27 @@ import { errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
 
+const allowedOrigins = [
+  env.clientOrigin,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+];
+
 app.use(
   cors({
-    origin: env.clientOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like curl, postman) or matching dev origins
+      if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 
