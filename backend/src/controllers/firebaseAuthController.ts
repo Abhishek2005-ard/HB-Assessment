@@ -4,8 +4,6 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import type { FirebaseRequest } from '../middleware/firebaseAuthMiddleware.js';
 
-const ALLOWED_EMAIL_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN ?? '@hbplus.fit';
-
 export const loginWithFirebase = async (
   req: FirebaseRequest,
   res: Response,
@@ -16,15 +14,22 @@ export const loginWithFirebase = async (
     return res.status(401).json({ message: 'Firebase token verification failed' });
   }
 
-  const email = decoded.email?.toLowerCase();
+  const email = decoded.email?.toLowerCase().trim();
 
   if (!email) {
     return res.status(400).json({ message: 'Firebase account email is missing' });
   }
 
-  const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN ?? '@hbplus.fit';
+  const rawDomain = process.env.ALLOWED_EMAIL_DOMAIN;
+  const allowedDomain = rawDomain !== undefined ? rawDomain.trim().toLowerCase() : '@hbplus.fit';
 
-  if (allowedDomain && !email.endsWith(allowedDomain)) {
+  const isAllowed =
+    !allowedDomain ||
+    allowedDomain === '*' ||
+    allowedDomain === 'all' ||
+    email.endsWith(allowedDomain.startsWith('@') ? allowedDomain : `@${allowedDomain}`);
+
+  if (!isAllowed) {
     return res.status(403).json({
       message: 'Access restricted. Please login using your official domain email.',
     });
