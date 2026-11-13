@@ -1,5 +1,9 @@
-import { signInWithPopup } from 'firebase/auth';
-import { useState } from 'react';
+import {
+  getRedirectResult,
+  signInWithPopup,
+  signInWithRedirect,
+} from 'firebase/auth';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { auth, googleProvider, isFirebaseConfigured } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +16,36 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Handle Google OAuth redirect on mobile devices
+  useEffect(() => {
+    let isMounted = true;
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!isMounted || !result?.user) return;
+        setGoogleLoading(true);
+        const firebaseToken = await result.user.getIdToken();
+        await loginWithGoogle(firebaseToken);
+        navigate('/dashboard');
+      })
+      .catch((requestError: any) => {
+        if (!isMounted) return;
+        let message = 'Google sign-in failed';
+        if (requestError?.response?.data?.message) {
+          message = requestError.response.data.message;
+        } else if (requestError instanceof Error) {
+          message = requestError.message;
+        }
+        setError(message);
+      })
+      .finally(() => {
+        if (isMounted) setGoogleLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [loginWithGoogle, navigate]);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -60,12 +94,33 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setError('');
 
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
+
     try {
+      if (isMobile) {
+        // Mobile browsers handle full-page redirect much more reliably than popups
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseToken = await result.user.getIdToken();
       await loginWithGoogle(firebaseToken);
       navigate('/dashboard');
     } catch (requestError: any) {
+      if (requestError?.code === 'auth/popup-blocked') {
+        // Fallback to redirect if popup was blocked
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch {
+          // Fall through to error handler
+        }
+      }
+
       let message = 'Google sign-in failed';
 
       if (requestError?.code === 'auth/network-request-failed') {
