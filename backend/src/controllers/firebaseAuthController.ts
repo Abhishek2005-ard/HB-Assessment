@@ -22,7 +22,9 @@ export const loginWithFirebase = async (
     return res.status(400).json({ message: 'Firebase account email is missing' });
   }
 
-  if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+  const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN ?? '@hbplus.fit';
+
+  if (allowedDomain && !email.endsWith(allowedDomain)) {
     return res.status(403).json({
       message: 'Access restricted. Please login using your official domain email.',
     });
