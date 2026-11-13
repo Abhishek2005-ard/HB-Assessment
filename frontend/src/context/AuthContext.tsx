@@ -33,7 +33,8 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://mern-auth-backend-qkwp.onrender.com/api';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return err.response.data.message;
       }
       if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-        return 'Backend server is unreachable. Please verify the backend is running on http://localhost:5000.';
+        return 'Backend server is temporarily unreachable. Please wait a few seconds and try again.';
       }
     }
     if (err instanceof Error) return err.message;

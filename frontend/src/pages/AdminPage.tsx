@@ -2,7 +2,8 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://mern-auth-backend-qkwp.onrender.com/api';
 
 interface UserRecord {
   _id: string;
